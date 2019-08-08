@@ -61,52 +61,52 @@ create table test2(
 >mysqldiff --server1=root:123456@127.0.0.1 --server2=root:123456@127.0.0.1 --difftype=sql test.test1:test.test2 >update.sql
 >vim update.sql
 ```
->  \# WARNING: Using a password on the command line interface can be insecure.
-> \# server1 on 127.0.0.1: ... connected.
-> \# server2 on 127.0.0.1: ... connected.
-> \# Comparing adott_sandbox.test1 to adott_sandbox.test2             [FAIL]
-> \# Transformation for --changes-for=server1:
-> \#
+>  \# WARNING: Using a password on the command line interface can be insecure.  
+> \# server1 on 127.0.0.1: ... connected.  
+> \# server2 on 127.0.0.1: ... connected.  
+> \# Comparing adott_sandbox.test1 to adott_sandbox.test2             [FAIL]  
+> \# Transformation for --changes-for=server1:  
+> \#  
+>   
+> ALTER TABLE `adott_sandbox`.`test1`   
+>   DROP PRIMARY KEY,   
+>   DROP COLUMN d,   
+>   CHANGE COLUMN b b varchar(5) NULL,   
+>   ADD COLUMN D int(11) NULL AFTER c,   
+>   CHANGE COLUMN a a varchar(10) NULL,   
+>   CHANGE COLUMN c c varchar(10) NULL,   
+> RENAME TO adott_sandbox.test2   
+> , COMMENT='test2';  
 > 
-> ALTER TABLE `adott_sandbox`.`test1` 
->   DROP PRIMARY KEY, 
->   DROP COLUMN d, 
->   CHANGE COLUMN b b varchar(5) NULL, 
->   ADD COLUMN D int(11) NULL AFTER c, 
->   CHANGE COLUMN a a varchar(10) NULL, 
->   CHANGE COLUMN c c varchar(10) NULL, 
-> RENAME TO adott_sandbox.test2 
-> , COMMENT='test2';
-> 
-> \# Compare failed. One or more differences found.
+> \# Compare failed. One or more differences found.  
 
 
 ## 如何对比整个数据库
  对比整个数据库提供了2个方法，第一个大家自己尝试。本文主要介绍shell+mysqdiff方案。
  1. mysqldbcompare用于比较两个服务器或同个服务器上的数据库，有文件和数据，并生成差异性SQL语句。
  2.编写shell脚本，利用mysqldiff对比。
- > #!/bin/sh
-> FROM_HOST=127.0.0.1
-> FROM_USER=root
-> FROM_PASS=123456
-> FROM_DATABASE=test
-> 
-> TO_HOST=127.0.0.1
-> TO_USER=root
-> TO_PASS=123456
-> TO_DATABASE=test
-> 
-> #-s 去掉表头
-> MYSQL_ETL="mysql -h $FROM_HOST -P3306 -D$FROM_DATABASE -u$FROM_USER -p$FROM_PASS -s -e"
-> table_sql="select table_name from information_schema.tables where table_schema ='$FROM_DATABASE'"
-> 
-> hive_table=$($MYSQL_ETL "${table_sql}")
-> 
-> echo $hive_table
-> for table in $hive_table
-> do
-> echo $table
-> mysqldiff --server1=$FROM_USER:$FROM_PASS@$FROM_HOST --server2=$TO_USER:$TO_PASS@$TO_HOST --difftype=sql $FROM_DATABASE.$table:$TO_DATABASE.$table >> update.sql
-> done
+ > #!/bin/sh  
+> FROM_HOST=127.0.0.1  
+> FROM_USER=root  
+> FROM_PASS=123456  
+> FROM_DATABASE=test  
+>   
+> TO_HOST=127.0.0.1  
+> TO_USER=root  
+> TO_PASS=123456  
+> TO_DATABASE=test  
+>   
+> #-s 去掉表头  
+> MYSQL_ETL="mysql -h $FROM_HOST -P3306 -D$FROM_DATABASE -u$FROM_USER -p$FROM_PASS -s -e"  
+> table_sql="select table_name from information_schema.tables where table_schema ='$FROM_DATABASE'"  
+>   
+> hive_table=$($MYSQL_ETL "${table_sql}")  
+>   
+> echo $hive_table   
+> for table in $hive_table  
+> do  
+> echo $table  
+> mysqldiff --server1=$FROM_USER:$FROM_PASS@$FROM_HOST --server2=$TO_USER:$TO_PASS@$TO_HOST --difftype=sql $FROM_DATABASE.$table:$TO_DATABASE.$table >> update.sql  
+> done  
 
  3.执行脚本，查看结果
